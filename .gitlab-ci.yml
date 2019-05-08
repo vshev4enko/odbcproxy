@@ -1,0 +1,44 @@
+variables:
+  GIT_SSL_NO_VERIFY: "true"
+build (obs):
+  stage: build
+  only:
+    - tags
+  tags:
+    - obs-gitlab
+  script:
+    - export REPO=$CI_PROJECT_PATH.git && export BRANCH=$CI_BUILD_REF_NAME && export CI_BUILD_DIR=$CI_PROJECT_DIR && export TAG_VERSION=$CI_BUILD_TAG
+    - cd ~ && "./obs-wrapper"
+
+build (rebar):
+  stage: build
+  only:
+    - tags
+    - master
+  script:
+    - source $HOME/.evm/scripts/evm use 18
+    - erl -eval 'erlang:display("Erlang v" ++ erlang:system_info(otp_release)), halt().'  -noshell
+    - rebar get-deps
+    - rebar compile
+
+#xref:
+#  stage: test
+#  tags:
+#    - de2gl03d_build_erlang
+#  script:
+#    - source $HOME/.evm/scripts/evm
+#    - erl -eval 'erlang:display("Erlang v" ++ erlang:system_info(otp_release)), halt().'  -noshell
+#    - rebar xref
+#
+#dialyze:
+#  stage: test
+#  tags:
+#    - de2gl03d_build_erlang
+#  cache:
+#    paths:
+#      - .rebar
+#  script:
+#    - source $HOME/.evm/scripts/evm
+#    - erl -eval 'erlang:display("Erlang v" ++ erlang:system_info(otp_release)), halt().'  -noshell
+#    - rebar check-plt || rebar build-plt
+#    - rebar dialyze

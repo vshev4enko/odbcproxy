@@ -1,0 +1,5 @@
+{odbcproxy, [
+    %% List of pools
+    %% Example: [{clickhouse, [{size, 10},{max_overflow, 20}], [{dsn, "dsn"},{server, "server"},{port, 8123}]}, {ch, [], []}]
+    {pools, {config_key, pools}}
+]}

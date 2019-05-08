@@ -1,0 +1,14 @@
+{application, odbcproxy,
+ [
+  {description, "Simple odbc wrapper with pool"},
+  {vsn, "0.1.1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  odbc,
+                  poolboy
+                 ]},
+  {mod, { odbcproxy_app, []}},
+  {env, []}
+ ]}.
