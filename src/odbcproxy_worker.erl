@@ -25,7 +25,6 @@
                 query_timeout :: integer()}).
 
 
--define(CONNECTION_ARGS, [dsn, server, port, sslmode, database, uid, pwd]).
 -define(INITIAL_DELAY, 500).
 -define(MAXIMUM_DELAY, 5 * 60 * 1000).
 -define(DEFAULT_TIMEOUT, 5 * 1000).
@@ -72,7 +71,7 @@ handle_info({'EXIT', Pid, Reason}, State) ->
             Timer ->
                 {State#state.delay, Timer}
         end,
-    error_logger:error_report("~p exit with reason ~p, attempt to reconnect after ~p", [Pid, Reason, NewDelay]),
+    error_logger:error_msg("~p exit with reason ~p, attempt to reconnect after ~p", [Pid, Reason, NewDelay]),
     {noreply, State#state{conn = undefined, delay = NewDelay, timer = NewTref}};
 handle_info(reconnect, State) ->
     {noreply, connect(State)};
@@ -93,9 +92,9 @@ code_change(_OldVsn, State, _Extra) ->
 connect(State) ->
     Args = State#state.start_args,
     Server = proplists:get_value(server, Args),
-    {ok, ConnStr} = make_conn_str(Args),
+    {ok, ConnStr} = odbcproxy:make_conn_str(Args),
 
-    case odbc:connect(ConnStr, [{binary_strings, on}, {tuple_row, off}]) of
+    case odbc:connect(ConnStr, [{binary_strings, on}]) of
         {ok, Conn} ->
             true = link(Conn),
             error_logger:info_msg("~n~p Connected to ~s", [self(), Server]),
@@ -103,7 +102,7 @@ connect(State) ->
             State#state{conn = Conn, delay = ?INITIAL_DELAY, timer = undefined};
         {error, Reason} ->
             NewDelay = calculate_delay(State#state.delay),
-            error_logger:error_report("~n~p Unable to connect, reason ~p", [self(), Reason]),
+            error_logger:error_msg("~n~p Unable to connect, reason ~p", [self(), Reason]),
             {ok, Tref} = timer:send_after(State#state.delay, self(), reconnect),
             State#state{conn=undefined, delay = NewDelay, timer = Tref}
     end.
@@ -114,20 +113,6 @@ calculate_delay(Delay) when (Delay * 2) >= ?MAXIMUM_DELAY ->
 calculate_delay(Delay) ->
     Delay * 2.
 
--spec make_conn_str(proplists:proplist()) -> {ok, string()}.
-make_conn_str(Args) ->
-    ConnStr = lists:foldl(fun(Key, Acc) ->
-        case proplists:get_value(Key, Args) of
-            Value when is_list(Value) ->
-                Acc ++ [atom_to_list(Key) ++ "=" ++ Value];
-            Value when is_integer(Value) ->
-                Acc ++ [atom_to_list(Key) ++ "=" ++ integer_to_list(Value)];
-            _ ->
-                Acc
-        end end, [], ?CONNECTION_ARGS),
-
-    {ok, string:join(ConnStr, ";")}.
-
 -spec with_exception(atom(), atom(), list()) -> term().
 with_exception(Mod, Fun, Args) ->
     try
@@ -135,6 +120,6 @@ with_exception(Mod, Fun, Args) ->
     catch
         E:R ->
             StackTrace = erlang:get_stacktrace(),
-            error_logger:error_report("Error ~p due perform request, reason ~p, stacktrace ~p", [E, R, StackTrace]),
+            error_logger:error_msg("Error: ~p due perform request, reason: ~p, stacktrace:~n~p", [E, R, StackTrace]),
             {E, R}
     end.

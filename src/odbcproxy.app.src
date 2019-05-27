@@ -1,7 +1,7 @@
 {application, odbcproxy,
  [
   {description, "Simple odbc wrapper with pool"},
-  {vsn, "0.1.1"},
+  {vsn, "0.2.2"},
   {registered, []},
   {applications, [
                   kernel,

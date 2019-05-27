@@ -18,7 +18,11 @@
          equery/2,
          equery/3,
          equery/4,
-         select_to_proplists/1]).
+         select_to_proplists/1,
+         make_conn_str/1,
+         open_conn/1,
+         open_conn/2,
+         close_conn/1]).
 
 
 -define(DEFAULT_POOL, odbc_pool).
@@ -61,9 +65,44 @@ equery(PoolName, Stmt, Params) ->
 equery(PoolName, Stmt, Params, Timeout) ->
     poolboy:transaction(PoolName, fun(Worker) -> gen_server:call(Worker, {equery, Stmt, Params, Timeout}, infinity) end).
 
+-spec open_conn(atom()) -> {ok, pid()} | {error, term()}.
+open_conn(PoolName) ->
+    open_conn(PoolName, []).
+
+open_conn(PoolName, OverrideConfig) ->
+    {ok, Pools} = application:get_env(odbcproxy, pools),
+    Config = lists:foldl(fun({Name, _, Cfg}, _) when Name =:= PoolName -> Cfg; (_, Acc) -> Acc end, [], Pools),
+    Overrided = lists:foldl(
+        fun({K,V}, Acc) ->
+            case proplists:get_value(K, OverrideConfig) of
+                undefined -> [{K,V}|Acc];
+                OverrideV -> [{K,OverrideV}|Acc]
+            end
+        end, [], Config),
+    {ok, Str} = make_conn_str(Overrided),
+    odbc:connect(Str, [{binary_strings, on}, {tuple_row, off}]).
+
+-spec close_conn(pid()) -> ok | {error, term()}.
+close_conn(Pid) ->
+    odbc:disconnect(Pid).
+
 -spec select_to_proplists(select()) -> proplists:proplist().
 select_to_proplists({selected, Columns, Rows}) ->
     Columns1 = lists:map(fun(X) when is_list(X) -> iolist_to_binary(X); (X) -> X end, Columns),
-    [lists:zip(Columns1, X) || X <- Rows];
+    [lists:zip(Columns1, tuple_to_list(X)) || X <- Rows];
 select_to_proplists(_) ->
     [].
+
+-spec make_conn_str(proplists:proplist()) -> {ok, string()}.
+make_conn_str(Args) ->
+    ConnStr = lists:foldl(fun(Key, Acc) ->
+        case proplists:get_value(Key, Args) of
+            Value when is_list(Value) ->
+                Acc ++ [atom_to_list(Key) ++ "=" ++ Value];
+            Value when is_integer(Value) ->
+                Acc ++ [atom_to_list(Key) ++ "=" ++ integer_to_list(Value)];
+            _ ->
+                Acc
+        end end, [], proplists:get_keys(Args)),
+
+    {ok, string:join(ConnStr, ";")}.
