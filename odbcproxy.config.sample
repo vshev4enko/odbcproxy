@@ -1,0 +1,18 @@
+[{odbcproxy, [
+    {pools, [
+        {clickhouse, [
+                {size, 10},
+                {max_overflow, 20}
+                ], [
+                {dsn, "ClickHouse"},
+                {host, "somehost"},
+                {port, 8123},
+                {sslmode, "require"},
+                {database, "db_name"},
+                {uid, "db_user"},
+                {pwd, "db_password"},
+                {peer_query_timeout_seconds, 30}
+                ]}
+           ]}
+      ]
+}].

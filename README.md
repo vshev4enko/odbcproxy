@@ -2,14 +2,6 @@
 
 ODBC connection pool
 
----
-
-| Branch | State    |
-| ------ | -------- |
-| master | ![alt text](https://gitlab.favorit/erlang/odbcproxy/badges/master/pipeline.svg) |
-
----
-
 ### Build
 ```bash
 rebar3 get-deps
@@ -58,37 +50,9 @@ App config
 ````
 ### Simple query
 ```
-2> odbcproxy:squery(clickhouse, "select * from card limit 1").
-{selected,["partner_id","id","card_number","webuser_id",
-           "cashdesk","line","dt","dt_done","sum_in","sum_out",
-           "sum_out_old","identity","calc_by_hand","result_full",
-           "ispaid","export_dt","export_sum","buggy_card","force_out",
-           "rsum_out","live_game","card_check","card_comm","check_out",
-           "check_send","rdt",
-           [...]|...],
-          [{1,<<"278">>,<<"63582644">>,<<"1300">>,<<"-5">>,0,
-            {{2011,7,11},{16,54,42}},
-            {{1970,1,1},{0,0,0}},
-            20.0,0.0,0.0,<<"150645">>,0,0,0,
-            {{1970,1,1},{0,0,0}},
-            0.0,0,0,0.0,0,<<"0">>,<<"NO VALUE">>,0,0,...}]}
-```
-### Extended query
-```
-9> odbcproxy:equery(clickhouse, "select * from card limit ?", [{sql_integer, [1]}]).
-{selected,["partner_id","id","card_number","webuser_id",
-           "cashdesk","line","dt","dt_done","sum_in","sum_out",
-           "sum_out_old","identity","calc_by_hand","result_full",
-           "ispaid","export_dt","export_sum","buggy_card","force_out",
-           "rsum_out","live_game","card_check","card_comm","check_out",
-           "check_send","rdt",
-           [...]|...],
-          [{1,<<"278">>,<<"63582644">>,<<"1300">>,<<"-5">>,0,
-            {{2011,7,11},{16,54,42}},
-            {{1970,1,1},{0,0,0}},
-            20.0,0.0,0.0,<<"150645">>,0,0,0,
-            {{1970,1,1},{0,0,0}},
-            0.0,0,0,0.0,0,<<"0">>,<<"NO VALUE">>,0,0,...}]}
+2> odbcproxy:squery(clickhouse, "select * from table limit 1").
+{selected,["column_names"],
+          [{"data"}]}
 ```
 ### Make pool in runtime
 ```

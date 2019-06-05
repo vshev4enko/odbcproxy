@@ -38,8 +38,7 @@ connect(Settings) ->
 
 -spec connect(pool_name(), settings()) -> supervisor:startchild_ret().
 connect(PoolName, {SizeArgs, WorkerArgs}) ->
-    PoolArgs = [{name, {local, PoolName}}, {worker_module, odbcproxy_worker}] ++ SizeArgs,
-    odbcproxy_sup:add_pool(PoolName, PoolArgs, WorkerArgs).
+    odbcproxy_sup:add_pool(PoolName, SizeArgs, WorkerArgs).
 
 -spec squery(list()) -> any().
 squery(Sql) ->
@@ -88,8 +87,7 @@ close_conn(Pid) ->
 
 -spec select_to_proplists(select()) -> proplists:proplist().
 select_to_proplists({selected, Columns, Rows}) ->
-    Columns1 = lists:map(fun(X) when is_list(X) -> iolist_to_binary(X); (X) -> X end, Columns),
-    [lists:zip(Columns1, tuple_to_list(X)) || X <- Rows];
+    [lists:zip(Columns, tuple_to_list(X)) || X <- Rows];
 select_to_proplists(_) ->
     [].
 
